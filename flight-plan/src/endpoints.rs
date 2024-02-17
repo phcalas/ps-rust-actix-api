@@ -1,16 +1,24 @@
+#[warn(unused_imports)]
+use env_logger::Env;
 use actix_web::{get, post, delete, put, HttpResponse, Responder, web};
+use diesel::PgConnection;
+use diesel::r2d2::{ManageConnection, ConnectionManager, Pool};
 use crate::database;
-use crate::database::insert_flight_plan;
-use crate::schema::{FlightPlan, User};
+#[warn(unused_imports)]
+use crate::models::{User, FlightPlan};
 
 #[post("/api/v1/admin/user/create")]
-pub async fn new_user(user: web::Json<User>) -> impl Responder {
-    match database::create_user(user.into_inner()) {
-        Ok(api_key) => HttpResponse::Ok().body(api_key),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string())
+pub async fn new_user(
+    pool: web::Data<Pool<ConnectionManager<PgConnection>>>,
+    user: web::Json<User>
+) -> impl Responder {
+    match database::create_user(pool, user.into_inner().clone()) {
+        Ok(api_key) => return(HttpResponse::Ok().body(api_key)),
+        Err(e) => return(HttpResponse::InternalServerError().body(e.to_string()))
     }    
 }
 
+/*
 #[get("/api/v1/flightplan")]
 pub async fn get_all_flight_plans() -> impl Responder {
     match database::get_all_flight_plans().unwrap() {
@@ -83,3 +91,4 @@ pub async fn update_flight_plan(flight_plan: web::Json<FlightPlan>) -> impl Resp
         }
     }
 }
+*/

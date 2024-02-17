@@ -1,17 +1,48 @@
-use config::Config;
-use std::error::Error;
-use rusqlite::Connection;
-use uuid::Uuid;
-use crate::schema::{FlightPlan, User};
+use diesel::backend::Backend;
+use serde::{Deserialize, Serialize};
+use env_logger::Env;
+use diesel::prelude::*;
+use diesel::connection::Connection;
+use diesel::result::Error;
+use diesel::pg::PgConnection;
+use diesel::r2d2::{ManageConnection, Pool, Error as R2D2Error, ConnectionManager};
+use actix_web::web;
+use actix_web::middleware::Logger;
 
-pub fn create_user(user: User) -> Result<String, Box<dyn Error>> {
+use diesel::row::NamedRow;
+
+use crate::models::{User, FlightPlan};
+#[warn(unused_imports)]
+use uuid::Uuid;
+use crate::schema::users::dsl::users;
+
+//pub type DbPool = diesel_connection::ConnectionPool;
+//r2d2::Pool<r2d2::ConnectionManager<SqliteConnection>>;
+
+pub fn create_user(pool: web::Data<Pool<ConnectionManager<PgConnection>>>, user: User) -> Result<String, Box<Error>> {
     let api_key = Uuid::new_v4().as_simple().to_string();    
-    let connection = get_database_connection()?;
-    let mut statement = connection.prepare("INSERT INTO users (full_name, api_key) VALUES (?, ?, ?, ?)")?;
-    let _ = statement.execute((user.name, api_key.clone()))?;
+    //let mut statement = connection.prepare("INSERT INTO users (full_name, api_key) VALUES (?, ?, ?, ?)")?;
+    //let _ = statement.execute((user.name, api_key.clone()))?;
+
+    //println!("User: {:?}", user);
+    log::error!("User: {:?}", user);
+    //ServerError::log("Username not found.".to_string())
+    //env_logger::fmt("User: {:?}", user);
+
+    // Add API ke to the user
+    let mut u = user.clone();
+    u.api_key = api_key.clone();
+    let new_users = vec![u];
+
+    let mut connection = web::Data::from(pool).get().unwrap();
+    diesel::insert_into(users)
+        .values(&new_users)
+        .execute(&mut connection)
+        .expect("TODO: panic message");
     Ok(api_key)
 }
 
+/*
 pub fn get_user(api_key: String) -> Result<Option<User>, Box<dyn Error>> {
     let connection = get_database_connection()?;
     let mut statement = connection.prepare("SELECT * FROM users WHERE api_key = ?")?;
@@ -33,9 +64,10 @@ pub fn get_user(api_key: String) -> Result<Option<User>, Box<dyn Error>> {
 pub fn get_all_flight_plans() -> Result<Option<Vec<FlightPlan>>, Box<dyn Error>> {
     let mut flight_plan_list : Vec<FlightPlan> = Vec::new();
 
-    let connection = get_database_connection()?;
-    let mut statement = connection.prepare("SELECT * FROM flight_plan")?;
-    let query_result = statement.query_map([], |row| {
+    let mut connection = get_database_connection()?;
+    let statement = sql_query("SELECT * FROM flight_plan").load(&mut connection);
+    let query_result = get_result
+    statement.map(|row| {
         Ok(FlightPlan {
             flight_plan_id: row.get(1)?,
             altitude: row.get(2)?,
@@ -106,7 +138,7 @@ pub fn get_flight_plan_by_id(plan_id: String) -> Result<Option<FlightPlan>, Box<
 pub fn delete_flight_plan(plan_id: String) -> Result<bool, Box<dyn Error>> {
     let mut successful = false;
     let connection = get_database_connection()?;
-    let mut statement = connection.prepare("DELETE FROM flight_plan WHERE flight_plan_id = ?1")?;
+    let mut statement = connection.build_transaction("DELETE FROM flight_plan WHERE flight_plan_id = ?1")?;
     let query_result = statement.execute([&plan_id])?;
     if query_result > 0 {
         successful = true;
@@ -118,7 +150,7 @@ pub fn insert_flight_plan(flight_plan: FlightPlan) -> Result<(), Box<dyn Error>>
     let connection = get_database_connection()?;
     let new_flight_plan_id = Uuid::new_v4().simple().to_string();
 
-    let mut statement = connection.prepare("INSERT INTO flight_plan (flight_plan_id, altitude, airspeed, aircraft_identification, \
+    let mut statement = connection.build_transaction("INSERT INTO flight_plan (flight_plan_id, altitude, airspeed, aircraft_identification, \
                                                          aircraft_type, arrival_airport, departing_airport, flight_type, departure_time, \
                                                          estimated_arrival_time, route, remarks, fuel_hours, fuel_minutes, number_onboard) \
                                                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")?;
@@ -131,7 +163,7 @@ pub fn insert_flight_plan(flight_plan: FlightPlan) -> Result<(), Box<dyn Error>>
 
 pub fn update_flight_plan(flight_plan: FlightPlan) -> Result<bool, Box<dyn Error>> {
     let connection = get_database_connection()?;
-    let mut statement = connection.prepare("UPDATE flight_plan SET altitude = ?, airspeed = ?, aircraft_identification = ?, \
+    let mut statement = connection.build_transaction("UPDATE flight_plan SET altitude = ?, airspeed = ?, aircraft_identification = ?, \
                                                      aircraft_type = ?, arrival_airport = ?, departing_airport = ?, flight_type = ?, \
                                                      departure_time = ?, estimated_arrival_time = ?, route = ?, remarks = ?, fuel_hours = ?, \
                                                      fuel_minutes = ?, number_onboard = ? WHERE flight_plan_id = ?")?;
@@ -147,10 +179,17 @@ pub fn update_flight_plan(flight_plan: FlightPlan) -> Result<bool, Box<dyn Error
     Ok(succeeded)
 }
 
-fn get_database_connection() -> Result<Connection, Box<dyn Error>> {
-    let settings = Config::builder()
-        .add_source(config::File::with_name("config"))
-        .build()?;
-    let connection = Connection::open(settings.get_string("DATABASE_LOCATION")?)?;
-    Ok(connection)
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_database_connection() {
+        let conn = get_database_connection();
+        match conn {
+            Ok(res) => println!("Test Ok"),
+            _ => panic!("Test KO")
+        };
+    }
 }
+*/

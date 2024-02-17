@@ -1,26 +1,31 @@
-use serde::{Serialize, Deserialize};
+use diesel::table;
+use diesel::sql_types::*;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FlightPlan {
-    pub flight_plan_id: String,
-    pub altitude: u16,
-    pub airspeed: u16,
-    pub aircraft_identification: String,
-    pub aircraft_type: String,
-    pub arrival_airport: String,
-    pub departing_airport: String,
-    pub flight_type: String,
-    pub departure_time: String,
-    pub estimated_arrival_time: String,
-    pub route: String,
-    pub remarks: String,
-    pub fuel_hours: u8,
-    pub fuel_minutes: u8,
-    pub number_onboard: u8
+diesel::table! {
+    flightplans(flight_plan_id) {
+        flight_plan_id -> VarChar,
+        altitude -> Integer,
+        airspeed -> Integer,
+        aircraft_identification -> VarChar,
+        aircraft_type -> VarChar,
+        arrival_airport -> VarChar,
+        departing_airport -> VarChar,
+        flight_type -> VarChar,
+        departure_tim -> VarChar,
+        estimated_arrival_time -> VarChar,
+        route -> VarChar,
+        remarks -> VarChar,
+        fuel_hours -> Integer,
+        fuel_minutes -> Integer,
+        number_onboard-> Integer,
+    }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct User {
-    pub name: String,
-    pub api_key: String
+table! {
+    users(username) {
+        username -> VarChar,
+        fullname -> VarChar,
+        password -> VarChar,
+        api_key -> VarChar,
+    }
 }
