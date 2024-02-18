@@ -2,21 +2,23 @@ mod schema;
 mod database;
 mod endpoints;
 mod models;
+mod auth;
 
 use std::task::Poll;
 use crate::endpoints::{
     // get_all_flight_plans, get_flight_plan_by_id,
     // delete_flight_plan_by_id, file_flight_plan,
     // update_flight_plan,
-     new_user};
+    new_user};
 
 use env_logger::Env;
+use log::{debug, error, log_enabled, info, Level, warn};
 use actix_web::middleware::Logger;
 use config::Config;
 use actix_web_httpauth::extractors::bearer::{BearerAuth, self};
 use actix_web_httpauth::extractors::AuthenticationError;
 use actix_web_httpauth::middleware::HttpAuthentication;
-use actix_web::{App, HttpServer, Error, dev::ServiceRequest, web};
+use actix_web::{App, HttpServer, dev::ServiceRequest, web};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use actix_cors::Cors;
 use crate::schema::users;
@@ -24,13 +26,16 @@ use crate::schema::flightplans;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ManageConnection, ConnectionManager, Pool, PooledConnection, R2D2Connection, Error as R2D2Error};
+use diesel::row::NamedRow;
+use diesel::result::Error;
+use crate::database::DbPool;
 
 // Initialize database connection pool based on `DATABASE_URL` environment variable.
 ///
 /// See more: <https://docs.rs/diesel/latest/diesel/r2d2/index.html>.
 /// Result<PooledConnection, PoolError>
 
-pub fn get_connection_pool(conn_spec: String) -> Pool<ConnectionManager<PgConnection>> {
+pub fn get_connection_pool(conn_spec: String) -> DbPool {
     // let conn_spec = std::env::var("DATABASE_URL").expect("DATABASE_URL should be set");
     let manager = ConnectionManager::<PgConnection>::new(conn_spec);
     // Refer to the `r2d2` documentation for more methods to use
@@ -43,35 +48,35 @@ pub fn get_connection_pool(conn_spec: String) -> Pool<ConnectionManager<PgConnec
 
 async fn validator(
     req: ServiceRequest,
-    _credentials: BearerAuth
+    credentials: BearerAuth,
 ) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
-    let _config = req.app_data::<bearer::Config>()
-            .cloned()
-            .unwrap_or_default()
-            .scope("urn:flight-plans");
+    let config = req.app_data::<bearer::Config>()
+        .cloned()
+        .unwrap_or_default()
+        .scope("urn:flight-plans");
 
-    // match database::get_user(String::from(credentials.token())) {
-    //     Ok(user) => {
-    //         match user {
-    //             Some(_) => {
-    //                 return Ok(req);
-    //             },
-    //             None => {
-    //                 Err((AuthenticationError::from(config).into(), req))
-    //             },
-    //         }
-    //
-    //     },
-    //     Err(_) => {
-    //         Err((AuthenticationError::from(config).into(), req))
-    //     }
-    // }
-    return Ok(req);
+    let pool = req.app_data::<web::Data<DbPool>>().cloned().unwrap();
+
+    let _ = match database::get_user(pool.clone(), &String::from(credentials.token())) {
+        Ok(user) => {
+            match user {
+                Some(_) => {
+                    return(Ok(req))
+                },
+                None => {
+                    return(Err((AuthenticationError::from(config).into(), req)))
+                },
+            }
+        },
+        Err(x) => {
+            return(Err((AuthenticationError::from(config).into(), req)))
+        },
+    };
+    Ok(req)
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    
     let settings = Config::builder()
         .add_source(config::File::with_name("config"))
         .build()
@@ -88,7 +93,7 @@ async fn main() -> std::io::Result<()> {
     // initialize DB pool outside of `HttpServer::new` so that it is shared across all workers
     let pool = get_connection_pool(conn_spec);
 
-    env_logger::init_from_env(Env::default().default_filter_or("info"));    
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
     HttpServer::new(move || {
         let middleware = HttpAuthentication::bearer(validator);
         let pool = pool.clone();
@@ -99,7 +104,7 @@ async fn main() -> std::io::Result<()> {
             // .service(delete_flight_plan_by_id)
             // .service(file_flight_plan)
             // .service(update_flight_plan)
-            .service(new_user, )
+            .service(new_user)
             .wrap(middleware)
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))

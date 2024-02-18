@@ -1,6 +1,8 @@
-use diesel::backend::Backend;
+use std::any::Any;
+use std::ops::DerefMut;
+use log::{debug, error, log_enabled, info, Level, warn};
 use serde::{Deserialize, Serialize};
-use env_logger::Env;
+
 use diesel::prelude::*;
 use diesel::connection::Connection;
 use diesel::result::Error;
@@ -8,59 +10,61 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::{ManageConnection, Pool, Error as R2D2Error, ConnectionManager};
 use actix_web::web;
 use actix_web::middleware::Logger;
-
 use diesel::row::NamedRow;
+use diesel::sql_query;
+use diesel::sql_types::Text;
 
 use crate::models::{User, FlightPlan};
-#[warn(unused_imports)]
 use uuid::Uuid;
+use crate::models;
+use crate::schema::users::{api_key, fullname, username};
 use crate::schema::users::dsl::users;
 
-//pub type DbPool = diesel_connection::ConnectionPool;
-//r2d2::Pool<r2d2::ConnectionManager<SqliteConnection>>;
+extern crate log;
 
-pub fn create_user(pool: web::Data<Pool<ConnectionManager<PgConnection>>>, user: User) -> Result<String, Box<Error>> {
-    let api_key = Uuid::new_v4().as_simple().to_string();    
+pub type DbPool = Pool<ConnectionManager<PgConnection>>;
+
+pub fn create_user(pool: web::Data<DbPool>, user: User) -> Result<String, Box<Error>> {
+    let apikey = Uuid::new_v4().as_simple().to_string();
     //let mut statement = connection.prepare("INSERT INTO users (full_name, api_key) VALUES (?, ?, ?, ?)")?;
     //let _ = statement.execute((user.name, api_key.clone()))?;
 
-    //println!("User: {:?}", user);
-    log::error!("User: {:?}", user);
-    //ServerError::log("Username not found.".to_string())
-    //env_logger::fmt("User: {:?}", user);
+    debug!("Create user: {:?}", user);
 
     // Add API ke to the user
     let mut u = user.clone();
-    u.api_key = api_key.clone();
+    u.api_key = apikey.clone();
     let new_users = vec![u];
 
+    // Get DB connexion from Pool
     let mut connection = web::Data::from(pool).get().unwrap();
+
     diesel::insert_into(users)
         .values(&new_users)
         .execute(&mut connection)
         .expect("TODO: panic message");
-    Ok(api_key)
+    Ok(apikey)
+}
+
+pub fn get_user(pool: web::Data<DbPool>, key: &String) -> Result<Option<User>, Error> {
+    // Get DB connexion from Pool
+    let mut connection = web::Data::from(pool).get().unwrap();
+
+    let data = users
+        .filter(api_key.eq(key))
+        .select((username, fullname, api_key))
+        .load::<User>(&mut connection)?;
+    // let data =
+    //     sql_query("SELECT username, fullname, api_key FROM users WHERE api_key = ?")
+    //         .bind::<Text, _>(name).get_result::<(String, String)>(connection);
+    if key.eq(&data[0].api_key) {
+        return Ok(Some(data[0].clone()))
+    } else {
+        return Ok(None)
+    }
 }
 
 /*
-pub fn get_user(api_key: String) -> Result<Option<User>, Box<dyn Error>> {
-    let connection = get_database_connection()?;
-    let mut statement = connection.prepare("SELECT * FROM users WHERE api_key = ?")?;
-    let query_result = statement.query_map([&api_key], |row| {
-        Ok(User {
-            name: row.get(1)?,
-            api_key: row.get(4)?
-        })
-    })?;
-
-    let mut user: Option<User> = None;
-    for api_user in query_result {
-        user = Some(api_user.unwrap());
-    }
-
-    Ok(user)
-}
-
 pub fn get_all_flight_plans() -> Result<Option<Vec<FlightPlan>>, Box<dyn Error>> {
     let mut flight_plan_list : Vec<FlightPlan> = Vec::new();
 

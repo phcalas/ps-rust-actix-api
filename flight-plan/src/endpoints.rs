@@ -1,5 +1,4 @@
 #[warn(unused_imports)]
-use env_logger::Env;
 use actix_web::{get, post, delete, put, HttpResponse, Responder, web};
 use diesel::PgConnection;
 use diesel::r2d2::{ManageConnection, ConnectionManager, Pool};

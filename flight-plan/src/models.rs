@@ -29,5 +29,6 @@ pub struct FlightPlan {
 #[diesel(table_name = users)]
 pub struct User {
     pub username: String,
+    pub fullname: String,
     pub api_key: String
 }
