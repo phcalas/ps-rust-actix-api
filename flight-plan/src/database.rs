@@ -1,5 +1,3 @@
-use std::any::Any;
-use std::ops::DerefMut;
 use log::{debug, error, log_enabled, info, Level, warn};
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +8,6 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::{ManageConnection, Pool, Error as R2D2Error, ConnectionManager};
 use actix_web::web;
 use actix_web::middleware::Logger;
-use diesel::row::NamedRow;
 use diesel::sql_query;
 use diesel::sql_types::Text;
 

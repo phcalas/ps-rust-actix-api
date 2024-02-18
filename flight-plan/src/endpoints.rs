@@ -12,8 +12,8 @@ pub async fn new_user(
     user: web::Json<User>
 ) -> impl Responder {
     match database::create_user(pool, user.into_inner().clone()) {
-        Ok(api_key) => return(HttpResponse::Ok().body(api_key)),
-        Err(e) => return(HttpResponse::InternalServerError().body(e.to_string()))
+        Ok(api_key) => return HttpResponse::Ok().body(api_key),
+        Err(e) => return HttpResponse::InternalServerError().body(e.to_string())
     }    
 }
 

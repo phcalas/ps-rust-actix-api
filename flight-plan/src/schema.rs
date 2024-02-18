@@ -1,5 +1,4 @@
 use diesel::table;
-use diesel::sql_types::*;
 
 diesel::table! {
     flightplans(flight_plan_id) {

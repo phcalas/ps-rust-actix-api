@@ -4,7 +4,6 @@ mod endpoints;
 mod models;
 mod auth;
 
-use std::task::Poll;
 use crate::endpoints::{
     // get_all_flight_plans, get_flight_plan_by_id,
     // delete_flight_plan_by_id, file_flight_plan,
@@ -12,7 +11,10 @@ use crate::endpoints::{
     new_user};
 
 use env_logger::Env;
+
+#[allow(unused_imports)]
 use log::{debug, error, log_enabled, info, Level, warn};
+
 use actix_web::middleware::Logger;
 use config::Config;
 use actix_web_httpauth::extractors::bearer::{BearerAuth, self};
@@ -21,13 +23,8 @@ use actix_web_httpauth::middleware::HttpAuthentication;
 use actix_web::{App, HttpServer, dev::ServiceRequest, web};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use actix_cors::Cors;
-use crate::schema::users;
-use crate::schema::flightplans;
-use diesel::prelude::*;
 use diesel::pg::PgConnection;
-use diesel::r2d2::{ManageConnection, ConnectionManager, Pool, PooledConnection, R2D2Connection, Error as R2D2Error};
-use diesel::row::NamedRow;
-use diesel::result::Error;
+use diesel::r2d2::{ConnectionManager, Pool};
 use crate::database::DbPool;
 
 // Initialize database connection pool based on `DATABASE_URL` environment variable.
@@ -61,18 +58,17 @@ async fn validator(
         Ok(user) => {
             match user {
                 Some(_) => {
-                    return(Ok(req))
+                    return Ok(req)
                 },
                 None => {
-                    return(Err((AuthenticationError::from(config).into(), req)))
+                    return Err((AuthenticationError::from(config).into(), req))
                 },
             }
         },
-        Err(x) => {
-            return(Err((AuthenticationError::from(config).into(), req)))
+        Err(_) => {
+            return Err((AuthenticationError::from(config).into(), req))
         },
     };
-    Ok(req)
 }
 
 #[actix_web::main]

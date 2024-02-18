@@ -1,6 +1,4 @@
 use diesel::{Insertable, Queryable, Selectable};
-use diesel::Expression;
-use diesel::sql_types::Integer;
 use serde::{Serialize, Deserialize};
 
 use crate::schema::{users, flightplans};
