@@ -5,8 +5,10 @@ mod models;
 mod auth;
 
 use crate::endpoints::{
-    // get_all_flight_plans, get_flight_plan_by_id,
-    // delete_flight_plan_by_id, file_flight_plan,
+    get_all_flight_plans,
+    get_flight_plan_by_id,
+    delete_flight_plan_by_id,
+    create_flight_plan,
     // update_flight_plan,
     new_user};
 
@@ -89,16 +91,16 @@ async fn main() -> std::io::Result<()> {
     // initialize DB pool outside of `HttpServer::new` so that it is shared across all workers
     let pool = get_connection_pool(conn_spec);
 
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    env_logger::init_from_env(Env::default().default_filter_or("debug"));
     HttpServer::new(move || {
         let middleware = HttpAuthentication::bearer(validator);
         let pool = pool.clone();
         App::new()
             .app_data(web::Data::new(pool))
-            // .service(get_flight_plan_by_id)
-            // .service(get_all_flight_plans)
-            // .service(delete_flight_plan_by_id)
-            // .service(file_flight_plan)
+            .service(get_flight_plan_by_id)
+            .service(get_all_flight_plans)
+            .service(delete_flight_plan_by_id)
+            .service(create_flight_plan)
             // .service(update_flight_plan)
             .service(new_user)
             .wrap(middleware)
@@ -115,7 +117,7 @@ async fn main() -> std::io::Result<()> {
     })
         .bind(("0.0.0.0", 3000))?
         .bind_openssl("0.0.0.0:3001", builder)?
-        .workers(2)
+        .workers(4)
         .run()
         .await
 }
