@@ -1,9 +1,9 @@
-use diesel::{Insertable, Queryable, Selectable};
-use serde::{Serialize, Deserialize};
+use diesel::{AsChangeset, Insertable, Queryable, Selectable};
+use serde::{Deserialize, Serialize};
 
-use crate::schema::{users, flight_plans};
+use crate::schema::{flight_plans, users};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Queryable, Insertable, Selectable)]
+#[derive(Serialize, Deserialize, Debug, Clone, Queryable, Insertable, Selectable, AsChangeset)]
 #[diesel(table_name = flight_plans)]
 pub struct FlightPlan {
     pub flight_plan_id: String,
@@ -20,7 +20,7 @@ pub struct FlightPlan {
     pub remarks: String,
     pub fuel_hours: i32,
     pub fuel_minutes: i32,
-    pub number_onboard: i32
+    pub number_onboard: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Insertable, Queryable, Selectable)]
@@ -28,5 +28,5 @@ pub struct FlightPlan {
 pub struct User {
     pub username: String,
     pub fullname: String,
-    pub api_key: String
+    pub api_key: String,
 }
