@@ -1,4 +1,3 @@
-DATABASE_LOCATION = "assets/duckair.db"
 CERTIFICATE_KEY = "assets/duckair.key"
 CERTIFICATE = "assets/duckair.crt"
 LOG_LEVEL = "info"
@@ -6,4 +5,4 @@ LOG_LEVEL = "info"
 DATABASE_LOCATION = "assets/duckair.db"
 # Postgres
 DATABASE_URL='postgres://phil:test!@localhost/flight_plan'
-
+APPLICATION_NAME='FlightPlan demo'
