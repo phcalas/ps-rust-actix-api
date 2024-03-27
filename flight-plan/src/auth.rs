@@ -1,4 +1,4 @@
-/*
+
 use crate::errors::ServiceError;
 use alcoholic_jwt::{token_kid, validate, Validation, JWKS};
 use serde::{Deserialize, Serialize};
@@ -26,8 +26,7 @@ pub fn validate_token(token: &str) -> Result<bool, ServiceError> {
 }
 
 fn fetch_jwks(uri: &str) -> Result<JWKS, Box<dyn Error>> {
-    let mut res = reqwest::get(uri)?;
+    let mut res = reqwest::blocking::get(uri)?;
     let val = res.json::<JWKS>()?;
     return Ok(val);
 }
-*/

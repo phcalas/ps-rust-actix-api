@@ -1,9 +1,9 @@
 [package]
 name = "flight-plan"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Pluralsight Web API using Actix"
-authors = ["Edward Curren"]
+authors = ["Edward Curren", "Philippe Calas"]
 license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -24,4 +24,8 @@ uuid = { version = "1.2.2", features = ["v4"]}
 env_logger = "0.10.0"
 config = "0.13.3"
 log = "0.4.20"
-reqwest = "0.11.24"
+reqwest = { version = "0.11.24", features = ["json", "blocking"] }
+alcoholic_jwt = "4091.0.0"
+derive_more = "0.99.17"
+[dev-dependencies]
+
