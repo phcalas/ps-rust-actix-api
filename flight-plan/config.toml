@@ -4,5 +4,6 @@ LOG_LEVEL = "info"
 # SQLLite
 DATABASE_LOCATION = "assets/duckair.db"
 # Postgres
-DATABASE_URL='postgres://phil:test!@localhost/flight_plan'
+DATABASE_URL='postgres://phil:test@localhost/flight_plan'
 APPLICATION_NAME='FlightPlan demo'
+AUTHORITY='http://localhost:8080/realms/master/'

@@ -5,13 +5,13 @@ use derive_more::Display;
 
 #[derive(Debug, Display)]
 pub enum ServiceError {
-    #[display(fmt = "Internal Server Error")]
+    #[display("Internal Server Error")]
     InternalServerError,
 
-    #[display(fmt = "BadRequest: {}", _0)]
+    #[display("BadRequest: {}", _0)]
     BadRequest(String),
 
-    #[display(fmt = "JWKSFetchError")]
+    #[display("JWKSFetchError")]
     JWKSFetchError,
 }
 
@@ -22,7 +22,7 @@ impl ResponseError for ServiceError {
             ServiceError::InternalServerError => {
                 HttpResponse::InternalServerError().json("Internal Server Error, Please try later")
             }
-            ServiceError::BadRequest(ref message) => HttpResponse::BadRequest().json(message),
+            ServiceError::BadRequest(message) => HttpResponse::BadRequest().json(message),
             ServiceError::JWKSFetchError => {
                 HttpResponse::InternalServerError().json("Could not fetch JWKS")
             }

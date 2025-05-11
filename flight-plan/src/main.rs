@@ -64,7 +64,7 @@ async fn validator(
 ) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
     let config = req
         .app_data::<Config>()
-        .map(|data| data.deref().clone())
+        .map(|data| data.clone())
         .unwrap_or_else(Default::default);
 
     match auth::validate_token(credentials.token()) {
@@ -79,13 +79,31 @@ async fn validator(
     }
 }
 
+macro_rules! handle_result {
+    ($result:expr, $ok:expr, $err:expr) => {
+        match $result {
+            Ok(ref result) => {
+                info!($ok, result);
+            }
+            Err(ref error) => {
+                error!($err, error);
+            }
+        }
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let settings = ConfigFile::builder()
-        .add_source(config::File::with_name("config"))
-        .build()
-        .unwrap();
 
+    info!("Init");
+
+    let config = config::File::with_name("flight-plan/config.toml");
+    let settings = ConfigFile::builder()
+        .add_source(config)
+        .build();
+    handle_result!(settings, "Settings {:?}", "Error opening file: {:?}");
+    let settings = settings.unwrap();
+        
     let certificate_key = settings.get_string("CERTIFICATE_KEY").unwrap();
     let certificate = settings.get_string("CERTIFICATE").unwrap();
     let conn_spec = settings
@@ -107,12 +125,15 @@ async fn main() -> std::io::Result<()> {
     let log_level = settings
         .get_string("LOG_LEVEL")
         .unwrap_or("info".to_string());
+    let authority = settings
+        .get_string("AUTHORITY")
+        .expect("Url AUTHORITY");
 
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     builder
-        .set_private_key_file(certificate_key, SslFiletype::PEM)
-        .unwrap();
-    builder.set_certificate_chain_file(certificate).unwrap();
+        .set_private_key_file(certificate_key, SslFiletype::PEM)?;
+
+    builder.set_certificate_chain_file(certificate)?;
 
     // initialize DB pool outside of `HttpServer::new` so that it is shared across all workers
     let pool = get_connection_pool(conn_spec, app_name, max_connection);
@@ -127,8 +148,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let middleware = HttpAuthentication::bearer(validator);
         let pool = pool.clone();
+        let authority = authority.clone();
         App::new()
             .app_data(web::Data::new(pool))
+            .app_data(web::Data::new(authority))
             .service(get_flight_plan_by_id)
             .service(get_all_flight_plans)
             .service(delete_flight_plan_by_id)

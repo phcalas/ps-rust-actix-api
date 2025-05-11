@@ -1,31 +1,37 @@
 [package]
 name = "flight-plan"
-version = "0.2.0"
-edition = "2021"
+version = "0.2.1"
+edition = "2024"
 description = "Pluralsight Web API using Actix"
 authors = ["Edward Curren", "Philippe Calas"]
 license = "Apache-2.0"
+resolver = "3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-openssl-sys = "0.9"
-openssl = "0.10"
-actix = "0.13.0"
-actix-web = {version = "4.3.0", features= ["openssl"] }
-actix-web-httpauth = "0.8.0"
-actix-cors = "0.6.4"
-rustls = "0.20.7"
-serde = { version = "1.0.147", features = ["derive"] }
-serde_json = "1.0.88"
-diesel = { version = "2", features = ["postgres_backend", "postgres", "r2d2", "numeric"] }
-bigdecimal = "0.1.2"
-uuid = { version = "1.2.2", features = ["v4"]}
-env_logger = "0.10.0"
-config = "0.13.3"
-log = "0.4.20"
-reqwest = { version = "0.11.24", features = ["json", "blocking"] }
+openssl-sys = "0.9.107"
+actix-web = {version = "4.10.2", features= ["openssl"] }
+actix-web-httpauth = "0.8.2"
+actix-cors = "0.7.1"
+rustls = "0.23.26"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+diesel = { version = "2.2.9", features = ["postgres_backend", "postgres", "r2d2", "numeric"] }
+bigdecimal = "0.4.8"
+uuid = { version = "1.16.0", features = ["v4"]}
+env_logger = "0.11.8"
+config = "0.15.11"
+log = "0.4.27"
+reqwest = { version = "0.12.15", features = ["json", "blocking"] }
 alcoholic_jwt = "4091.0.0"
-derive_more = "0.99.17"
+derive_more = "2.0.1"
+time = "0.3.41"
+openssl = "0.10.72"
+
 [dev-dependencies]
+
+[build]
+target-dir = "../../target"
+
 

@@ -13,7 +13,8 @@ struct Claims {
 
 pub fn validate_token(token: &str) -> Result<bool, ServiceError> {
     let authority = std::env::var("AUTHORITY").expect("AUTHORITY must be set");
-    let jwks = fetch_jwks(&format!("{}{}", authority.as_str(), ".well-known/jwks.json"))
+//    let jwks = fetch_jwks(&format!("{}{}", authority.as_str(), ".well-known/jwks.json"))
+    let jwks = fetch_jwks(&format!("{}{}", authority.as_str(), ".well-known/openid-configuration"))
         .expect("failed to fetch jwks");
     let validations = vec![Validation::Issuer(authority), Validation::SubjectPresent];
     let kid = match token_kid(&token) {
@@ -26,7 +27,7 @@ pub fn validate_token(token: &str) -> Result<bool, ServiceError> {
 }
 
 fn fetch_jwks(uri: &str) -> Result<JWKS, Box<dyn Error>> {
-    let mut res = reqwest::blocking::get(uri)?;
+    let res = reqwest::blocking::get(uri)?;
     let val = res.json::<JWKS>()?;
     return Ok(val);
 }

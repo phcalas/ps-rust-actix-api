@@ -2,7 +2,7 @@
 
 Installation of server and client plus the libraries for Diesel installation
 ```
-sudo apt install postgresql postgresql-contrib postgresql-server-dev-13
+sudo apt install postgresql postgresql-contrib postgresql-server-dev-16
 sudo systemctl status postgres
 ```
 
