@@ -5,7 +5,6 @@ mod models;
 mod schema;
 mod errors;
 
-use std::ops::Deref;
 use crate::endpoints::{
     create_flight_plan, delete_flight_plan_by_id, get_all_flight_plans, get_flight_plan_by_id,
     new_user, update_flight_plan,
@@ -203,7 +202,7 @@ mod test {
         let conn_spec = std::env::var("DATABASE_URL").expect("DATABASE_URL should be set");
         let pool = get_connection_pool(conn_spec, "UT test_database_get_no_light".to_string(), 1);
 
-        for i in 0..100 {
+        for _ in 0..100 {
             let x = crate::database::get_flight_plan_by_id(
                 Data::new(pool.clone()),
                 &"unknown-flight".to_string(),

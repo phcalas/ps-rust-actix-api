@@ -1,4 +1,4 @@
-# Install Posgres server  client
+# Install Postgres server  client
 
 Installation of server and client plus the libraries for Diesel installation
 ```

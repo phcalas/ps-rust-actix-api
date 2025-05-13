@@ -4,7 +4,7 @@ use crate::database::DbPool;
 use crate::models::{FlightPlan, User};
 #[warn(unused_imports)]
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use diesel::r2d2::{ConnectionManager, ManageConnection, Pool};
+use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 #[warn(unused_imports)]
 use log::{debug, error, info, log_enabled, warn, Level};
@@ -22,7 +22,7 @@ pub async fn new_user(
 
 #[get("/api/v1/flightplan")]
 pub async fn get_all_flight_plans(pool: web::Data<DbPool>) -> impl Responder {
-    debug!("Get flights...");
+    info!("Get all flight plans");
     match database::get_all_flight_plans(pool) {
         Ok(flight_plan_list) => {
             return HttpResponse::Ok()
@@ -30,6 +30,7 @@ pub async fn get_all_flight_plans(pool: web::Data<DbPool>) -> impl Responder {
                 .json(flight_plan_list);
         }
         Err(e) => {
+            error! ("no flight plans: {}", e);
             return HttpResponse::NoContent().body(format!(
                 "There are no flight plans filed with this system {}",
                 e.to_string()
@@ -45,7 +46,7 @@ pub async fn get_flight_plan_by_id(
 ) -> impl Responder {
     let flight_plan_id = path.into_inner().clone();
 
-    debug!("Get flight {}", flight_plan_id.to_string());
+    info!("Get flight {}", flight_plan_id.to_string());
 
     let _ = match database::get_flight_plan_by_id(pool, &flight_plan_id) {
         Ok(flight_plan) => match flight_plan {
@@ -55,6 +56,7 @@ pub async fn get_flight_plan_by_id(
                     .json(flight_plan_from_db)
             }
             None => {
+                error!("No flight plan found");
                 return HttpResponse::NotFound().body(format!(
                     "There is not any flight plan with id {}",
                     flight_plan_id
@@ -77,13 +79,14 @@ pub async fn delete_flight_plan_by_id(
 ) -> impl Responder {
     let flight_plan_id = path.into_inner();
 
-    debug!("Delete flight {}", flight_plan_id.to_string());
-
+    info!("Delete flight");
+    debug!("delete flight {}", flight_plan_id.clone());
     match database::delete_flight_plan(pool, &flight_plan_id) {
         Ok(successful) => {
             if successful {
                 HttpResponse::Ok().finish()
             } else {
+                error!("No flight plan");
                 HttpResponse::NotFound().body(format!(
                     "There is not any flight plan with id {}",
                     flight_plan_id
@@ -99,6 +102,7 @@ pub async fn create_flight_plan(
     flight_plan: web::Json<FlightPlan>,
     pool: web::Data<DbPool>,
 ) -> impl Responder {
+    info!("Create flight plans");
     debug!("Create flight {}", flight_plan.flight_plan_id.to_string());
 
     match database::insert_flight_plan(pool, &flight_plan) {
@@ -120,8 +124,10 @@ pub async fn update_flight_plan(
     match database::update_flight_plan(pool, &updated_flight_plan) {
         Ok(succeeded) => {
             if succeeded {
+                debug!("Updated");
                 HttpResponse::Ok().finish()
             } else {
+                debug!("No update");
                 HttpResponse::NotFound().body(format!(
                     "There is not any flight plan with id {}",
                     updated_flight_plan.flight_plan_id

@@ -5,9 +5,11 @@ use derive_more::Display;
 
 #[derive(Debug, Display)]
 pub enum ServiceError {
+    #[allow(unused)]
     #[display("Internal Server Error")]
     InternalServerError,
 
+    #[allow(unused)]
     #[display("BadRequest: {}", _0)]
     BadRequest(String),
 
